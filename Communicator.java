@@ -1,5 +1,8 @@
 package nachos.threads;
 
+
+import java.util.Vector;
+
 import nachos.machine.*;
 
 /**
@@ -13,7 +16,19 @@ public class Communicator {
 	/**
 	 * Allocate a new communicator.
 	 */
+	
+	private int liscounter;
+	private int specounter;
+	Lock lock = new Lock();
+	Condition2 lisstate = new Condition2(lock);
+	Condition2 spestate = new Condition2(lock);
+	Vector wd = new Vector();
+	
 	public Communicator() {
+		specounter = 0;
+		liscounter = 0;
+				
+		
 	}
 
 	/**
@@ -27,6 +42,21 @@ public class Communicator {
 	 * @param word the integer to transfer.
 	 */
 	public void speak(int word) {
+		boolean intStatus = Machine.interrupt().disable();
+		lock.acquire();
+		if(liscounter == 0){
+			specounter ++;
+			wd.addElement(word);
+			spestate.sleep();
+			
+		}else{
+			wd.addElement(word);
+			lisstate.wake();
+			liscounter --;
+		}
+		lock.release();
+		Machine.interrupt().restore(intStatus);
+		return;
 	}
 
 	/**
@@ -35,7 +65,28 @@ public class Communicator {
 	 * 
 	 * @return the integer transferred.
 	 */
-	public int listen() {
-		return 0;
+	public int listen() 
+	{
+		boolean intStatus = Machine.interrupt().disable();
+		lock.acquire();
+		if(specounter == 0)
+		{
+			liscounter ++;
+			lisstate.sleep();
+		}
+		else
+		{
+			spestate.wake();
+		}
+		
+		lock.release();
+		if(wd.isEmpty())
+		{
+			return 0;
+		}
+		else
+		{
+			return (Integer)wd.remove(0);
+		}
 	}
 }

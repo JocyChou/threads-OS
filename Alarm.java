@@ -2,6 +2,10 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
+
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
  * until a certain time.
@@ -29,7 +33,30 @@ public class Alarm {
 	 * should be run.
 	 */
 	public void timerInterrupt() {
-		KThread.currentThread().yield();
+		long curTime = Machine.timer().getTime();
+		boolean needYield = false;
+		boolean intStatus = Machine.interrupt().disable();
+		if(wakeTimeList.size() == 0);
+		else
+		{
+			Iterator<Map.Entry<KThread,Long>> iter = wakeTimeList.entrySet().iterator();
+			while(iter.hasNext())
+			{
+				Map.Entry<KThread, Long> entry = iter.next();
+				long time = entry.getValue();
+				if(curTime > time)
+				{
+					needYield = true;
+					entry.getKey().ready();
+					iter.remove();	
+				}
+			}
+			if( needYield )
+			{
+				KThread.currentThread().yield();
+			}
+		}
+		Machine.interrupt().restore(intStatus);
 	}
 
 	/**
@@ -45,9 +72,16 @@ public class Alarm {
 	 * @see nachos.machine.Timer#getTime()
 	 */
 	public void waitUntil(long x) {
-		// for now, cheat just to get something working (busy waiting is bad)
+		
+		boolean intStatus = Machine.interrupt().disable();
+		
 		long wakeTime = Machine.timer().getTime() + x;
-		while (wakeTime > Machine.timer().getTime())
-			KThread.yield();
+		KThread thread = KThread.currentThread();
+		wakeTimeList.put(thread, wakeTime);
+		thread.sleep();
+		Machine.interrupt().restore(intStatus);
 	}
+	
+	
+	private Map<KThread,Long> wakeTimeList = new HashMap<KThread,Long>();
 }

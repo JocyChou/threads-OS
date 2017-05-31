@@ -195,6 +195,18 @@ public class KThread {
 		Lib.debug(dbgThread, "Finishing thread: " + currentThread.toString());
 
 		Machine.interrupt().disable();
+		
+		ThreadQueue curJoinQ = currentThread.joinQueue;
+		if(curJoinQ != null)
+		{
+			KThread thread = curJoinQ.nextThread();
+			while(thread != null)
+			{
+				thread.ready();
+				thread = curJoinQ.nextThread();
+			}
+		}
+		
 
 		Machine.autoGrader().finishingCurrentThread();
 
@@ -282,10 +294,34 @@ public class KThread {
 	 */
 	public void join() {
 		Lib.debug(dbgThread, "Joining to thread: " + toString());
-
 		Lib.assertTrue(this != currentThread);
-
+		
+		boolean intstatus = Machine.interrupt().disable(); 
+		if(status == statusFinished)
+		{
+			return;
+		}
+		if (joinQueue == null) 
+		{
+            joinQueue = ThreadedKernel.scheduler.newThreadQueue(true);  
+            joinQueue.acquire(this);
+		}
+ 
+        joinQueue.waitForAccess(currentThread);
+        currentThread.sleep();
+	
+		Machine.interrupt().restore(intstatus);
+		return;
+		
 	}
+	
+
+		
+		
+		//joinSemaphore.P();
+		
+
+
 
 	/**
 	 * Create the idle thread. Whenever there are no threads ready to be run,
@@ -459,6 +495,10 @@ public class KThread {
 	private static int numCreated = 0;
 
 	private static ThreadQueue readyQueue = null;
+	
+	private static ThreadQueue joinQueue = null;
+	
+	private static ThreadQueue waitQueue = null;
 
 	private static KThread currentThread = null;
 

@@ -20,7 +20,7 @@ import java.util.LinkedList;
  * <li><tt>wake()</tt>: wake up a single thread sleeping in this condition
  * variable, if possible.
  * 
- * <li><tt>wakeAll()</tt>: wake up all threads sleeping inn this condition
+ * <li><tt>wakeAll()</tt>: wake up all threads sleeping in this condition
  * variable.
  * 
  * </ul>
@@ -72,9 +72,9 @@ public class Condition {
 	 * 
 	 * <p>
 	 * This implementation uses semaphores to implement this, by allocating a
-	 * semaphore for each waiting thread. The waker will <tt>V()</tt> this
-	 * semaphore, so thre is no chance the sleeper will miss the wake-up, even
-	 * though the lock is released before caling <tt>P()</tt>.
+	 * semaphore for each waiting thread. The waker will <tt>V() signal</tt> this
+	 * semaphore, so there is no chance the sleeper will miss the wake-up, even
+	 * though the lock is released before calling <tt>P() wait</tt>.
 	 */
 	public void sleep() {
 		Lib.assertTrue(conditionLock.isHeldByCurrentThread());

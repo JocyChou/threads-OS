@@ -83,8 +83,7 @@ public class ThreadedKernel extends Kernel {
 	private static PriorityScheduler dummy2 = null;
 
 	private static LotteryScheduler dummy3 = null;
-
-	private static Condition2 dummy4 = null;
+ private static Condition2 dummy4 = null;
 
 	private static Communicator dummy5 = null;
 

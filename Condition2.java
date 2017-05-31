@@ -1,5 +1,7 @@
 package nachos.threads;
 
+import java.util.LinkedList;
+
 import nachos.machine.*;
 
 /**
@@ -22,6 +24,8 @@ public class Condition2 {
 	public Condition2(Lock conditionLock) {
 		this.conditionLock = conditionLock;
 	}
+	
+	
 
 	/**
 	 * Atomically release the associated lock and go to sleep on this condition
@@ -31,10 +35,13 @@ public class Condition2 {
 	 */
 	public void sleep() {
 		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+		boolean intStatus = Machine.interrupt().disable();
 
 		conditionLock.release();
-
+		waitQueue.add(KThread.currentThread());
+		KThread.sleep();
 		conditionLock.acquire();
+		Machine.interrupt().restore(intStatus);
 	}
 
 	/**
@@ -43,6 +50,16 @@ public class Condition2 {
 	 */
 	public void wake() {
 		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+		boolean intStatus = Machine.interrupt().disable();
+		if(!waitQueue.isEmpty())
+		{
+			KThread thread = waitQueue.removeFirst();
+			if (thread != null) 
+			{
+				thread.ready();
+			}
+		}
+		Machine.interrupt().restore(intStatus);
 	}
 
 	/**
@@ -51,7 +68,21 @@ public class Condition2 {
 	 */
 	public void wakeAll() {
 		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+		boolean intStatus = Machine.interrupt().disable();
+		
+		
+		while (!waitQueue.isEmpty() && waitQueue.removeFirst() != null)
+		{
+			wake();
+		}
+		
+		Machine.interrupt().restore(intStatus);
 	}
 
 	private Lock conditionLock;
+	
+	private int value;
+	
+	
+	private LinkedList<KThread> waitQueue = new LinkedList<KThread>();
 }
